@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.Loader;
@@ -14,18 +15,30 @@ namespace Dtwo.Core.Plugins
     public static class PluginsManager
     {
         private static List<Plugin> m_plugins = new List<Plugin>();
-        public static Action<Plugin> OnLoadPluginEvent;
-        public static Action<Plugin> BeforeLoadPluginEvent;
-        public static Action OnAllPluginsLoaded;
+        public static Action<Plugin>? OnLoadPluginEvent;
+        public static Action<Plugin>? BeforeLoadPluginEvent;
+        public static Action? OnAllPluginsLoaded;
 
-        public static int LoadPlugins(List<byte[]> bytes, string otherPluginsFolder,  Action<int> progressionStep = null, Func<PluginInfos, bool> canLoadCallback = null)
+        public static int LoadPlugins(List<byte[]>? bytes, string otherPluginsFolder,  Action<int>? progressionStep = null, Func<PluginInfos, bool>? canLoadCallback = null)
         {
             int loadedPlugins = 0;
 
             try
             {
                 LogManager.Log("Load Plugins ");
-                List<Plugin> plugins = PluginManager.LoadPlugins<Plugin>(bytes, "dRgUkXp2s5v8y/B?E(G+KbPeShVmYq3t", otherPluginsFolder);
+                //List<Plugin> plugins = PluginManager.LoadPlugins<Plugin>(bytes, "dRgUkXp2s5v8y/B?E(G+KbPeShVmYq3t", otherPluginsFolder);
+
+                List<Plugin> plugins = new List<Plugin>();
+
+                var subFolders = System.IO.Directory.GetDirectories(otherPluginsFolder);
+
+                foreach (var folder in subFolders)
+                {
+                    var pluginsRange = PluginManager.LoadPlugins<Plugin>(folder);
+
+                    if (pluginsRange != null)
+                        plugins.AddRange(pluginsRange);
+                }
 
                 if (plugins == null)
                 {
@@ -60,7 +73,7 @@ namespace Dtwo.Core.Plugins
             }
             catch(Exception ex)
             {
-                Console.WriteLine("Error on load plugins : " + ex.Message);
+                LogManager.LogError($"{nameof(PluginsManager)}.{nameof(LoadPlugins)}", "Error on load plugins : " + ex.Message);
                 return -1;
             }
         }
@@ -113,11 +126,23 @@ namespace Dtwo.Core.Plugins
 
         private static void OnPluginRegisterEvent(Plugin plugin, string methodNam, Type messageType)
         {
+            if (messageType.FullName == null)
+            {
+                LogMessage.LogError("Error on register event : messageType.FullName is null");
+                return;
+            }
+
             EventPlaylistManager.RegisterEvent(plugin, methodNam, messageType.FullName);
         }
 
         private static void OnPluginUnregisterEvent(Plugin plugin, string methodNam, Type messageType)
         {
+            if (messageType.FullName == null)
+            {
+                LogMessage.LogError("Error on register event : messageType.FullName is null");
+                return;
+            }
+
             EventPlaylistManager.UnRegisterEvent(plugin, methodNam, messageType.FullName);
         }
     }

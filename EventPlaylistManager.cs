@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -32,9 +33,7 @@ namespace Dtwo.Core.Plugins
 
         public static void RegisterEvent(Plugin plugin, string methodName, string messageType)
         {
-            Console.WriteLine("Register event " + methodName + " " + messageType.ToString());
-
-            Dictionary<string, string> events;
+            Dictionary<string, string>? events;
             if (m_events.TryGetValue(plugin, out events))
             {
                 if (events.ContainsKey(messageType) == false)
@@ -76,8 +75,8 @@ namespace Dtwo.Core.Plugins
                     if (paramTypeAndMethod.Key == networkMessage.GetType().ToString())
                     {
                         Type pluginType = evnt.Key.GetType();
-                        MethodInfo method = pluginType.GetMethod(paramTypeAndMethod.Value);
-
+                        MethodInfo? method = pluginType.GetMethod(paramTypeAndMethod.Value);
+                       
                         if (method != null)
                         {
                             method.Invoke(evnt.Key, new dynamic[] { window, networkMessage }); // Cast automatique ??

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -23,6 +24,12 @@ namespace Dtwo.Core.Plugins
 
             var pluginType = assembly.GetType(plugin.GetType().ToString());
 
+            if (pluginType == null)
+            {
+                LogManager.LogWarning($"Error: pluginType is null for {plugin.Infos.Name}");
+                return false;
+            }
+
             var methods = pluginType.GetMethods();
             for (int i = 0; i < methods.Length; i++)
             {
@@ -33,8 +40,9 @@ namespace Dtwo.Core.Plugins
                 for (int j = 0; j < attributes.Length; j++)
                 {
                     var attribute = attributes[j];
-                    DofusEvent evnt = attribute as DofusEvent;
-                    ExportedMethod exportedMethod = attribute as ExportedMethod;
+
+                    DofusEvent? evnt = attribute as DofusEvent;
+                    ExportedMethod? exportedMethod = attribute as ExportedMethod;
 
                     if (evnt != null || exportedMethod != null)
                     {
@@ -47,6 +55,12 @@ namespace Dtwo.Core.Plugins
                             {
                                 ParameterInfo param1 = parameters[1];
                                 Type paramType = param1.ParameterType;
+
+                                if (paramType.FullName == null)
+                                {
+                                    LogManager.Log($"Error: paramType.FullName is null for {plugin.Infos.Name} {methodName}");
+                                    continue;
+                                }
                                 
                                 EventPlaylistManager.RegisterEvent(plugin, methodName, paramType.FullName);
                             }
